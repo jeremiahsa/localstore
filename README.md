@@ -4,13 +4,15 @@ localstore
 Local Store is a module that uses web sql to store forms and attachments on the client side. It is useful as a failsafe for limited connectivity on mobile devices.
 
 
-Configuration:
+Configuration
+------------
     1. Set database name for the client side database.
         db = openDatabase('ms4mobile', '1.1', 'MS4 Web Storage', 3 * 1024 * 1024);
     2. Set URL for your file uploads.
         var url = encodeURI('https://ms4.ms4front.net/mobileapp.php'); 
 
-Initialization:
+Initialization
+------------
 Initialization is automatically done when the module is called. For each application, you will need to specify a different database name, version number, and long name. The database tables will automatically be created. 
 
 
@@ -18,6 +20,7 @@ Initialization is automatically done when the module is called. For each applica
 
 
 Storing Forms:
+-------------
 To store a form, call
     
     localstore.initializeForm(id, formLabel, editNew);
@@ -41,7 +44,8 @@ data - The data object from the server. It should be in JSON format and contain 
 The inspection id is optional, but can be used to update the client-side id of a newly created object before the attachments are uploaded to the server. The other thing that this function does is indicate that the object has been saved so that it will not show up in the outbox.
 
 
-Capturing Images:
+Capturing Images
+----------------
 Capturing images hooks into an attachments table to save the form data along with the photo. The photo is saved for upload on the device as long as the app is not closed completely. Each photo will upload on its own through the module.
     
     localstore.captureImage(event, editNew, formId, projectid, table, gallery, source);
@@ -53,26 +57,30 @@ projectid - This is the unique id of the record (foreign key) for the object bei
 table - The name of the table on the server (This may or may not be useful and can be ignored on the server side)
 gallery - the javascript ID of the image gallery if you wish to have a thumbnail show up after the image is captured.
 source - Optional argument to determine the source of the image capture, whether camera or photo library.
-    Camera.PictureSourceType.CAMERA
-    Camera.PictureSourceType.PHOTOLIBRARY
+
+- Camera.PictureSourceType.CAMERA
+- Camera.PictureSourceType.PHOTOLIBRARY
 
 
 
-Error Logging:
+Error Logging
+----------------
 For debugging purposes, the console logs sql query results and errors.
 
 
 
-Outbox:
+Outbox
+-----------
 To send all unsaved records through the outbox, only a simple call of localstore.sendAllUnsaved() is required. Localstore will loop through all records in the client side database and convert each one back into a form data object before submitting it to the server.
 
 To get all of the labels for the outbox, call localstore.getLabels(). The callback will return a list of items to loop through. Each item will have a label and an index for the label. 
 
-deleteAll
+###deleteAll###
 Simple function to clear out all records on the client-side database. It also removes images from the app's temporary folder. 
 
-allForms
+###allForms###
 Simple function which logs the items in the outbox. This can be modified to return the results via a callback. 
-allUploads
+
+###allUploads###
 Simple function to show all uploads in the outbox. This could be modified to return the results as a callback.
 
