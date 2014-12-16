@@ -69,7 +69,6 @@ var unsavedForms = {};
 	localstore.maxId;
 	
 	localstore.initializeDB = function() {
-		console.log('initializing database');
 		if (window.openDatabase) {
 			console.log('window.openDatabase successful');
 			try {
@@ -114,19 +113,10 @@ var unsavedForms = {};
 		if (typeof(editNew) === 'undefined') {
 			editNew = '';
 		}
-		console.log('storeform called');
-		console.log(formName);
 		var form = JSON.stringify(formName);
-		console.log(form);
-		//var projectid = document.getElementsByName('projectid')[0].value;
-		// NEED to find a replacement ID for projectid. 
-		console.log('inserting');
 		try {
 			db.transaction(function(tx) {
 				tx.executeSql("INSERT INTO Forms (fkey, fval, fdate, fsaved, editNew) VALUES (?, ?, ?, ?, ?);", [id, form, $.now(), 'false', editNew], function(tx, results) {
-					// Removed projectid from the insert statement.
-					console.log('inserted');
-					console.log(results);
 					localstore.updateMaxId;
 				}, function(tx, error) {console.log('error inserting record'); console.log(error)});
 			});
@@ -141,7 +131,6 @@ var unsavedForms = {};
 				if (results.rows.length == 0) {
 				}
 				for (var i = 0; i < results.rows.length; i++) {
-					console.log(results.rows.item(i));
 					var row = {
 						'saved': results.rows.item(i).fsaved,
 						'label': results.rows.item(i).label
@@ -172,23 +161,15 @@ var unsavedForms = {};
 	}
 	
 	localstore.markFormAsSaved = function(formName, data) {
-		console.log(data);
-		console.log(formName);
 		db.transaction(function(tx) {
 			tx.executeSql("UPDATE Forms SET fsaved='true' WHERE fKey=?;", [formName], function(tx, results) {
-				console.log('successful update');
 				try {
 				// This line is where the id from the server can be set. Use data.inspectionid
 				tx.executeSql("UPDATE Uploads SET inspectionId=? WHERE formKey=?;", [data.id, formName], function(tx, results) {
 					console.log('updated uploads');
 					tx.executeSql("SELECT * FROM Uploads WHERE formKey=? AND usaved != 'true';", [formName], function(tx, results) {
-						console.log('selecting from uploads');
-						console.log(results);
 						for (var i=0; i<results.rows.length; i++) {
-							console.log('about to load file');
-							//console.log(results.rows.item(i));
 							try {
-								spin.start('sending file to server');
 								sendFileToServer(results.rows.item(i), formName);
 							} catch(e) {
 								console.log(e);
@@ -231,7 +212,6 @@ var unsavedForms = {};
 /*******************/
 	var elementInfo;
 	localstore.captureImage = function(formId, gallery, source) {
-		console.log('captureimage started');
 		try {
 		elementInfo = {
 			formId: formId,
@@ -242,44 +222,32 @@ var unsavedForms = {};
 			destinationType: Camera.DestinationType.FILE_URI,
 			encodingType: Camera.EncodingType.JPEG,
 		};
-		console.log('config inited');
 		config.sourceType = source;
 		navigator.camera.getPicture(cameraSuccess, cameraFail, config);
 		} catch(e) {
-			console.log('there was an error');
-			console.log(e);
+			console.log('there was an error' + e);
 		}
 	}
 	
-	function cameraSuccess(imageData) {
-		console.log('successful image capture');
-		
+	function cameraSuccess(imageData) {		
 		elementInfo.fileURI = imageData;
 		try {
-		var image = document.createElement("IMG");
-		image.src = imageData;
-		image.style.display = "block";
-		image.style.width = '200px';
-		image.style.position = "relative";
-		image.style.float = "left";
-		image.style.padding = "10px";
-				
-		elementInfo.gallery.appendChild(image);
+			var image = document.createElement("IMG");
+			image.src = imageData;
+			image.style.display = "block";
+			image.style.width = '200px';
+			image.style.position = "relative";
+			image.style.float = "left";
+			image.style.padding = "10px";
+			elementInfo.gallery.appendChild(image);
 		} catch(e) { console.log(e); }
-		console.log(elementInfo);
 		saveFileToDb(elementInfo);
-		
-		console.log('Successful image capture');
 	}
 	function cameraFail(message) {
-		console.log(elementInfo);
 		console.log('camera failed: ' + message);
 	}
 	
 	saveFileToDb = function(elementInfo) {
-		console.log('saving file to db');
-		console.log('fUploadName, formId, editNew, fInputName');
-		console.log(elementInfo);
 		try {
 			db.transaction(function(tx) {
 				tx.executeSql("INSERT INTO Uploads (filename, formKey, inputName, usaved, editNew, projectid, servertable) VALUES (?, ?, ?, ?, ?, ?, ?);", [elementInfo.fileURI, elementInfo.formId, 'file[]', 'false', elementInfo.editNew, elementInfo.projectid, elementInfo.table], logSql); 
@@ -293,17 +261,13 @@ var unsavedForms = {};
  * SERVER OPERATIONS
  *********************/
 function send_fail(errors) {
-	console.log('error sending file');
-	console.log(errors);
-	spin.stop();
+	console.log('error sending file: ' + errors);
 	alert('The file attached failed to upload to the server. Please attach the photo from your camera roll and try again. This error may result from a weak internet connection.')
 	setTimeout(spin.stop(), 2000);
 	_render();
 }
 
 	sendFileToServer = function(fields, formName) {
-		console.log('fields: ' );
-		console.log(fields);
 		try {
 			var params = {
 				table: fields.servertable,
@@ -326,24 +290,12 @@ function send_fail(errors) {
 			var ft = new FileTransfer();
 			ft.upload(fields.filename, url, send_success, send_fail , options);
 		} catch(e) {
-			console.log('error uploading file');
-			console.log(e);
+			console.log('error uploading file: ' + e);
 		}
 	}
 	function send_success(success) {
-		console.log('file uploaded successfully');
-		console.log(success);
 		var response = JSON.parse(success.response);
-		console.log(response);
-		try {
-			for (var i=0; i < response.length; i++) {
-				console.log(response[i]);
-			}
-		} catch(e) {
-			console.log(e);
-		}
 		var formKey = response.formKey;
-		console.log(formKey);
 		db.transaction(function(tx) {
 			tx.executeSql("UPDATE Uploads SET usaved='true' WHERE formKey=?;", [formKey], function(tx, results) {
 				console.log('updated uploads');
@@ -368,25 +320,16 @@ function send_fail(errors) {
 					_render();
 				}
 				for (var i = 0; i < results.rows.length; i++) {
-					console.log('storing to form data');
-					console.log(results.rows.item(i));
 					var formId = results.rows.item(i).fkey;
 					var fd = new FormData($(formId));
 					fd.append('_', new Date().getTime());
 					fd.fields = {};
 					fd.method = "post";
 					var res = JSON.parse(results.rows.item(i).fval);
-					console.log(formId);
-					console.log(res);
 					for (var j = 0; j < res.length; j++) {
-						//console.log('row ' + j + ' of ' + res.length);
-						//console.log('res[j]: ' + res[j]);
-						//console.log(res[j].name + ': ' + res[j].value);
 						fd.append(res[j].name, res[j].value);
-						//fd.fields[res[j].name] = res[j].value;
 					}
 					try {
-						console.log('sending all unsaved');
 						localstore.sendAllUnsaved(fd, formId);
 					} catch(e) {
 						console.log('not able to send unsaved');
@@ -403,7 +346,6 @@ localstore.sendAllUnsaved = function(callback, frmId) {
 	if (!callback) {
 		sendOutboxToServer();	
 	} else {
-		console.log('posting to server');
 		$.ajax(url, {
 			data: callback,
 			type: "post",
